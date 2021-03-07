@@ -1,5 +1,8 @@
 from flask import Flask, request
 from flask_restx import Resource, Api, fields
+from random import randint
+from time import sleep
+
 
 from pathlib import Path
 import json
@@ -51,12 +54,21 @@ class BaseLine(Resource):
     def post(self):
         body = request.get_json(force=True)
 
-        bmi_category = body["bmi_category"]
-        underlying_health_issues = body["underlying_health_issues"]
-        age_group = body["age_group"]
+        try:
+            bmi_category = body["bmi_category"]
+            underlying_health_issues = body["underlying_health_issues"]
+            age_group = body["age_group"]
+        except KeyError as exc:
+            return {"message": f"Missing: {str(exc)}"}, 400
 
-        risk_category = compute_risk(bmi_category, underlying_health_issues, age_group)
+        try:
+            risk_category = compute_risk(
+                bmi_category, underlying_health_issues, age_group
+            )
+        except KeyError as exc:
+            return {"message": f"Invalid value: {str(exc)}"}, 400
 
+        sleep(randint(0, 3))
         return {"risk_category": min(risk_category, 10)}
 
 
