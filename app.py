@@ -1,4 +1,3 @@
-import enum
 from flask import Flask, request
 from flask_restx import Resource, Api, fields
 from random import randint
