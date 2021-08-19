@@ -1,3 +1,4 @@
+import enum
 from flask import Flask, request
 from flask_restx import Resource, Api, fields
 from random import randint
@@ -28,7 +29,6 @@ age_bracket_to_risk = {
     "group_5": 5,
 }
 
-
 def compute_risk(bmi_category, underlying_health_issues, age_bracket):
     health_factor = 3 if underlying_health_issues else 0
 
@@ -41,36 +41,30 @@ def compute_risk(bmi_category, underlying_health_issues, age_bracket):
 resource_fields = api.model(
     "Resource",
     {
-        "bmi_category": fields.String,
-        "underlying_health_issues": fields.Boolean,
-        "age_group": fields.String,
+        "bmi_category": fields.String(required=True, enum=["UNDERWEIGHT", "HEALTHY", "OVERWEIGHT", "OBESE", "VERY_OBESE"]),
+        "underlying_health_issues": fields.Boolean(required=True),
+        "age_group": fields.String(required=True, enum=["group_1", "group_2", "group_3", "group_4", "group_5"]),
     },
 )
 
 
 @api.route("/baseline_risk")
 class BaseLine(Resource):
-    @api.expect(resource_fields)
+    @api.expect(resource_fields, validate=True)
     def post(self):
         body = request.get_json(force=True)
 
-        try:
-            bmi_category = body["bmi_category"]
-            underlying_health_issues = body["underlying_health_issues"]
-            age_group = body["age_group"]
-        except KeyError as exc:
-            return {"message": f"Missing: {str(exc)}"}, 400
+        bmi_category = body["bmi_category"]
+        underlying_health_issues = body["underlying_health_issues"]
+        age_group = body["age_group"]
 
-        try:
-            risk_category = compute_risk(
-                bmi_category, underlying_health_issues, age_group
+        risk_category = compute_risk(
+            bmi_category, underlying_health_issues, age_group
             )
-        except KeyError as exc:
-            return {"message": f"Invalid value: {str(exc)}"}, 400
 
         sleep(randint(0, 3))
         return {"risk_category": min(risk_category, 10)}
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
